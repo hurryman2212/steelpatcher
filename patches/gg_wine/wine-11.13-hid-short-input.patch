@@ -1,0 +1,57 @@
+diff --git a/dlls/winebus.sys/main.c b/dlls/winebus.sys/main.c
+index a6227be..93104c1 100644
+--- a/dlls/winebus.sys/main.c
++++ b/dlls/winebus.sys/main.c
+@@ -627,6 +627,6 @@ static void process_hid_report(DEVICE_OBJECT *device, BYTE *report_buf, DWORD re
+     struct device_extension *ext = (struct device_extension *)device->DeviceExtension;
+     ULONG size = offsetof(struct hid_report, buffer[report_len]);
+-    struct hid_report *report, *last_report;
++    struct hid_report *report, *last_report, *resized;
+     IRP *irp;
+ 
+     TRACE("device %p report_buf %p (%#x), report_len %#lx\n", device, report_buf, *report_buf, report_len);
+@@ -693,6 +693,7 @@ static void process_hid_report(DEVICE_OBJECT *device, BYTE *report_buf, DWORD re
+     if (ext->state != DEVICE_STATE_STARTED)
+     {
+         RtlLeaveCriticalSection(&ext->cs);
++        RtlFreeHeap(GetProcessHeap(), 0, report);
+         return;
+     }
+ 
+@@ -701,13 +702,35 @@ static void process_hid_report(DEVICE_OBJECT *device, BYTE *report_buf, DWORD re
+     if (!last_report)
+     {
+         WARN("Ignoring report with unexpected id %#x\n", *report_buf);
++        RtlFreeHeap(GetProcessHeap(), 0, report);
+         RtlLeaveCriticalSection(&ext->cs);
+         return;
+     }
+ 
++    if (!ext->report_fixups && report->length > last_report->length)
++    {
++        WARN("Ignoring oversized input report %lu (expected %lu)\n", report->length, last_report->length);
++        RtlFreeHeap(GetProcessHeap(), 0, report);
++        RtlLeaveCriticalSection(&ext->cs);
++        return;
++    }
++    if (!ext->report_fixups && report->length < last_report->length)
++    {
++        size = offsetof(struct hid_report, buffer[last_report->length]);
++        if (!(resized = RtlReAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, report, size)))
++        {
++            RtlFreeHeap(GetProcessHeap(), 0, report);
++            RtlLeaveCriticalSection(&ext->cs);
++            return;
++        }
++        report = resized;
++        report->length = last_report->length;
++    }
++
+     list_add_tail(&ext->reports, &report->entry);
+ 
+-    memcpy(last_report->buffer, report_buf, report_len);
++    if (ext->report_fixups) memcpy(last_report->buffer, report_buf, report_len);
++    else memcpy(last_report->buffer, report->buffer, report->length);
+ 
+     if ((irp = pop_pending_read(ext)))
+     {

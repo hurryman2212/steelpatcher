@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "architecture": "arm-thumb",
+  "artifacts": {
+    "extension": {
+      "storage": "external_00040000",
+      "runtime": "ram_20004360",
+      "deployment": {
+        "protocol": "steelseries-hid-object-v1",
+        "object_id": "0xFF21",
+        "route": "0x00",
+        "report_size": 65,
+        "block_size": 128,
+        "stage_chunk_size": 48,
+        "read_chunk_size": 30,
+        "command_delay_ms": 12,
+        "erase_delay_ms": 3000,
+        "load_delay_ms": 50,
+        "reset_delay_ms": 4000,
+        "preflight": {
+          "object_id": "0x0000",
+          "states": [
+            {
+              "name": "empty",
+              "regions": {
+                "external_00040000": {
+                  "fill": ["0x00", "0xFF"]
+                },
+                "external_00041000": {
+                  "fill": ["0x00", "0xFF"]
+                }
+              }
+            },
+            {
+              "name": "installed",
+              "regions": {
+                "external_00040000": {
+                  "artifact": "extension"
+                }
+              }
+            },
+            {
+              "name": "previous_release",
+              "regions": {
+                "external_00040000": {
+                  "sha256": [
+                    "98838881cb358f56e44441ccafcc9966e9a83902d122885d9781453677d2120d",
+                    "952ac9a4583b9479657c1f766abd5d362dee66327392164fa67bf859aec1c957"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "loader": {
+      "storage": "mcu_000190c0"
+    },
+    "fallback": {
+      "storage": "mcu_0002ab2c"
+    }
+  },
+  "resources": {
+    "macro": {
+      "storage": "external_00041000",
+      "data_size": 1280
+    },
+    "state": {
+      "runtime": "ram_20004b60"
+    }
+  },
+  "build_definitions": {
+    "PATCH_CODE_ADDRESS": {
+      "memory": "ram",
+      "region": "ram_20004360",
+      "field": "address"
+    },
+    "PATCH_CODE_RAW_OFFSET": {
+      "memory": "flash",
+      "region": "external_00040000",
+      "field": "offset"
+    },
+    "PATCH_LOAD_SIZE": {
+      "memory": "ram",
+      "region": "ram_20004360",
+      "field": "size"
+    },
+    "PATCH_CODE_SECTOR_SIZE": {
+      "memory": "flash",
+      "region": "external_00040000",
+      "field": "size"
+    },
+    "PATCH_MACRO_RAW_OFFSET": {
+      "memory": "flash",
+      "region": "external_00041000",
+      "field": "offset"
+    },
+    "PATCH_MACRO_SECTOR_SIZE": {
+      "memory": "flash",
+      "region": "external_00041000",
+      "field": "size"
+    },
+    "PATCH_MACRO_DATA_SIZE": 1280,
+    "PATCH_STATE_ADDRESS": {
+      "memory": "ram",
+      "region": "ram_20004b60",
+      "field": "address"
+    },
+    "PATCH_STATE_LIMIT": {
+      "memory": "ram",
+      "region": "ram_20004b60",
+      "field": "end"
+    },
+    "PATCH_LOADER_FLAG_ADDRESS": {
+      "memory": "ram",
+      "region": "ram_20004b60",
+      "field": "end",
+      "addend": -4
+    },
+    "PATCH_TARGET_OUTPUT_ADDRESS": "0x200039E0",
+    "PATCH_MOUSE_REPORT_BUTTONS_ADDRESS": "0x20003952",
+    "PATCH_MOUSE_REPORT_PREVIOUS_BUTTONS_ADDRESS": "0x20003958",
+    "PATCH_TICK_OUTPUT_ADDRESS": "0x20003838",
+    "PATCH_STAGING_BUFFER_ADDRESS": "0x200033F4",
+    "PATCH_STAGING_BUFFER_SIZE": 512,
+    "PATCH_ACTIVITY_ADDRESS": "0x2000330C",
+    "PATCH_RAW_DRIVER_ADDRESS": "0x200028B4"
+  },
+  "checks": {
+    "patterns": {
+      "flash_ram_abi": {
+        "pattern": "B4 28 00 20 0C 33 00 20",
+        "count": 2
+      },
+      "input_report_ram_abi": {
+        "pattern": "52 39 00 20 E0 39 00 20 F0 24 00 20"
+      },
+      "scheduler_ram_abi": {
+        "pattern": "59 39 00 20 28 38 00 20 38 38 00 20"
+      }
+    }
+  },
+  "hooks": {
+    "mapping_press": {
+      "artifact": "loader",
+      "target": "PatchMappingPressTrampoline",
+      "pattern": "13 78 32 2B 0F D0 04 D8 30 2B 10 D0 31 2B 05 D0"
+    },
+    "mapping_release": {
+      "artifact": "loader",
+      "target": "PatchMappingReleaseTrampoline",
+      "pattern": "0B 78 34 2B 08 D0 02 D8 33 2B 05 D0 70 47 62 2B"
+    },
+    "tick_1ms": {
+      "artifact": "loader",
+      "target": "PatchTickTrampoline",
+      "pattern": "00 23 A3 72 ?? ?? 98 B2 00 F5 00 66 B6 B2 B6 F5 80 5F"
+    },
+    "flash_erase": {
+      "artifact": "loader",
+      "target": "PatchFlashEraseTrampoline",
+      "select_call": {
+        "offset": 4,
+        "target": "object_erase"
+      },
+      "pattern": "08 B5 50 88 ?? ?? ?? ?? 02 4B 1A 68 DA 60 00 20 08 BD 00 BF 0C 33 00 20"
+    },
+    "flash_push": {
+      "artifact": "loader",
+      "target": "PatchFlashPushTrampoline",
+      "select_call": {
+        "offset": 16,
+        "target": "object_write"
+      },
+      "pattern": "08 B5 50 88 10 F4 7F 4F 04 D1 53 68 04 49 12 89 ?? ?? ?? ?? 03 4B 1A 68 DA 60 00 20 08 BD 00 BF F4 33 00 20 0C 33 00 20",
+      "count": 2
+    },
+    "flash_pull": {
+      "artifact": "loader",
+      "target": "PatchFlashPullTrampoline",
+      "select_call": {
+        "offset": 16,
+        "target": "object_read"
+      },
+      "pattern": "08 B5 50 88 10 F4 7F 4F 04 D1 53 68 04 49 12 89 ?? ?? ?? ?? 03 4B 1A 68 DA 60 00 20 08 BD 00 BF F4 33 00 20 0C 33 00 20",
+      "count": 2
+    }
+  },
+  "bindings": {
+    "flash_context": {
+      "kind": "signature",
+      "thumb": true,
+      "pattern": "10 B5 78 B1 09 4B 9A 6A 02 F1 14 03 11 69 00 22 8A 42 01 D1 00 20 10 BD 1C 88 84 42 04 D0 0C 33 01 32 F5 E7 02 48 10 BD 18 46 10 BD B4 28 00 20 CC 28 00 20"
+    },
+    "mapping_press_next": {
+      "kind": "hook_next",
+      "hook": "mapping_press",
+      "thumb": true
+    },
+    "mapping_release_next": {
+      "kind": "hook_next",
+      "hook": "mapping_release",
+      "thumb": true
+    },
+    "tick_next": {
+      "kind": "branch_target",
+      "hook": "tick_1ms",
+      "offset": 4,
+      "expected": "17 B0 BD E8 F0 8F",
+      "thumb": true
+    },
+    "object_read": {
+      "kind": "signature",
+      "thumb": true,
+      "select_call": {
+        "offset": 18,
+        "target": "flash_context"
+      },
+      "pattern": "2D E9 D8 41 1E 46 0B 4B 9B 7A 0F 46 90 46 03 B9 58 B9 ?? ?? ?? ?? 58 B1 41 68 07 48 43 46 84 68 00 68 3A 46 31 44 A0 47 01 23 18 46 BD E8 D8 81 03 46 FA E7 54 3D 00 20 B4 28 00 20"
+    },
+    "object_write": {
+      "kind": "signature",
+      "thumb": true,
+      "select_call": {
+        "offset": 18,
+        "target": "flash_context"
+      },
+      "pattern": "2D E9 D8 41 1E 46 0B 4B 9B 7A 0F 46 90 46 03 B9 58 B9 ?? ?? ?? ?? 58 B1 41 68 07 48 43 46 C4 68 00 68 3A 46 31 44 A0 47 01 23 18 46 BD E8 D8 81 03 46 FA E7 54 3D 00 20 B4 28 00 20"
+    },
+    "object_erase": {
+      "kind": "signature",
+      "thumb": true,
+      "select_call": {
+        "offset": 18,
+        "target": "flash_context"
+      },
+      "pattern": "70 B5 0C 4C A5 7A 06 46 15 B9 08 B1 00 20 70 BD 30 46 ?? ?? ?? ?? 00 2E 08 BF 00 25 A5 72 00 28 F4 D0 05 4B 82 68 41 68 1C 69 18 68 A0 47 01 20 70 BD 00 BF 54 3D 00 20 B4 28 00 20"
+    },
+    "raw_sector_erase": {
+      "kind": "signature",
+      "thumb": true,
+      "pattern": "37 B5 04 46 0D 46 ?? ?? ?? ?? 20 23 8D F8 04 30 2B 0C 8D F8 05 30 20 46 2B 0A 8D F8 06 30 8D F8 07 50 ?? ?? ?? ?? 94 E8 09 00 98 47 04 23 0D EB 03 01 00 22 25 69 20 68 A8 47 A3 68 20 68 98 47 03 B0 30 BD"
+    },
+    "crc32": {
+      "kind": "signature",
+      "thumb": true,
+      "pattern": "30 B5 3A B1 13 68 DB 43 0B 4D 01 44 81 42 04 D1 D8 43 30 BD 4F F0 FF 33 F6 E7 10 F8 01 2B 53 40 08 22 13 F0 01 04 18 BF 2C 46 01 3A 84 EA 53 03 F7 D1 EB E7 00 BF 20 83 B8 ED"
+    },
+    "fallback_handler": {
+      "kind": "patch_symbol",
+      "artifact": "fallback",
+      "symbol": "FallbackFlashHandler",
+      "thumb": true
+    }
+  },
+  "bss_end": {
+    "resource": "state",
+    "pattern": "54 43 00 20 00 00 00 00 00 00 00 00 08 B5 07 4B"
+  }
+}

@@ -1,0 +1,1 @@
+include generate-version.sh generate_version.ps1

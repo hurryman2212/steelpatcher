@@ -1,0 +1,147 @@
+--- rival-3-wireless-v2.scm
++++ rival-3-wireless-v2.scm
+@@ -133,5 +133,7 @@
+     (define (fw-update-time-between-commands) 12)
+     (define (init-sleep-length) 1000)
+     (define (post-deploy-sleep-length) 1000)
++    (define (do-deploy-macros) #t)
++    (define (macro-data-size) 1280)
+     (define recovery-effect-delay #t)
+     (define update-firmware-version #t)
+@@ -152,4 +154,6 @@
+     (define reset_op 0x01)
++    (define flash_buffer_access_op 0x03)
++    (define flash_buffer_load_op 0x05)
+     (define flash_erase_op 0x08)
+     (define firmware_version_op 0x10)
+     (define save_flash_op 0x09)
+@@ -165,3 +169,5 @@
+     (define wireless_power_mode_op 0x2E)
+     (define unique_id_op 0x63)
+     (define connection_status 0xA8)
++    (define FS_ID_MACRO_BLOCK 0xFF20)
++    (define FS_ID_PATCH_EXTENSION 0xFF21)
+@@ -288,3 +294,45 @@
+     (define (get_unique_id)
+         (let ((data (unique_id: (json->lisp (read-from-device (get-pid-for-device-write) "{\"unique_id\": []}")))))
+             (bytes->string (id: data))))
++
++    (define (make_flash_write offset size data)
++        (append-bytes
++            [0x00]
++            (write-op flash_buffer_access_op)
++            0x00
++            (uint32-to-uint16-bytes offset)
++            (uint32-to-uint16-bytes size)
++            data))
++
++    (define (make_flash_push id offset size)
++        (append-bytes
++            [0x00]
++            (write-op flash_buffer_load_op)
++            0x00
++            (uint32-to-uint16-bytes id)
++            (uint32->bytes offset)
++            (uint32-to-uint16-bytes size)))
++
++    (define (make_flash_erase id)
++        (append-bytes
++            [0x00]
++            (write-op flash_erase_op)
++            0x00
++            (uint32-to-uint16-bytes id)))
++
++    (define (make_flash_pull id offset size)
++        (append-bytes
++            [0x00]
++            (read-op flash_buffer_load_op)
++            0x00
++            (uint32-to-uint16-bytes id)
++            (uint32->bytes offset)
++            (uint32-to-uint16-bytes size)))
++
++    (define (make_flash_read offset size)
++        (append-bytes
++            [0x00]
++            (read-op flash_buffer_access_op)
++            0x00
++            (uint32-to-uint16-bytes offset)
++            (uint32-to-uint16-bytes size)))
+@@ -305,5 +353,6 @@
+             0x51            ; combo key
+             0x61            ; media key
+             0x62            ; meta key
++            0x71            ; onboard macro
+         ))
+         (field key_codes bytearray (size 4)))
+@@ -324,5 +373,6 @@
+             0x51            ; combo key
+             0x61            ; media key
+             0x62            ; meta key
++            0x71            ; onboard macro
+         ))
+         (field key_codes bytearray (size 4)))
+@@ -348,3 +398,63 @@
+         (fields-from-struct wheel_mapping_data))
+     (api wheel_mappings
+         (api-write HID (chunk HIDIO io-report-size payload)))
++
++    (struct steelpatch_header
++        (outgoing
++            (unaligned))
++        (incoming
++            (unaligned)
++            (field magic uint32)
++            (field abi uint32)))
++    (api steelpatch_header
++        (cache-exempt)
++        (unblockable)
++        (mixes-reads-writes)
++        (no-preempt)
++        (read-chunks-byte-specifiers '((0 0 0) (0 0 0) (1 8 0)))
++        (api-read HID
++            (write-chunk HIDIO io-report-size
++                (make_flash_pull FS_ID_PATCH_EXTENSION 0 8))
++            (write-chunk HIDSLEEP 4 (uint32-to-bytes 50))
++            (read-chunk HIDIO io-report-size (make_flash_read 0 8))))
++
++    (struct macro_data
++        (unaligned)
++        (field event_data bytearray (size (macro-data-size))))
++
++    (struct macros
++        (unaligned)
++        (fields-from-struct macro_data))
++    (api macros
++        (api-let*
++            (chunk_size 48)
++            (push_size 128)
++            (push_chunks (partition push_size (bytearray->list payload)))
++            (write_chunks
++                (map
++                    (lambda (chunk) (partition chunk_size chunk))
++                    push_chunks))
++            (final_chunks
++                (flatten*
++                    (map
++                        (lambda (pushes push_index)
++                            (list
++                                (map
++                                    (lambda (writes write_index)
++                                        (make_flash_write
++                                            (* (pred write_index) chunk_size)
++                                            (length writes)
++                                            (list->bytearray writes)))
++                                    pushes
++                                    (interval (length pushes)))
++                                (make_flash_push
++                                    FS_ID_MACRO_BLOCK
++                                    (* (pred push_index) push_size)
++                                    (length (flatten pushes)))))
++                        write_chunks
++                        (interval (length write_chunks))))))
++        (api-write HID
++            (chunk HIDIO io-report-size (make_flash_erase FS_ID_MACRO_BLOCK))
++            (chunk HIDSLEEP 4 (uint32-to-bytes 3000))
++            (chunk-loop (length final_chunks)
++                (chunk HIDIO io-report-size (nth final_chunks (succ loopcount))))))

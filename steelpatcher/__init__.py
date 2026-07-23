@@ -1,0 +1,1 @@
+"""SteelSeries firmware patching tools."""

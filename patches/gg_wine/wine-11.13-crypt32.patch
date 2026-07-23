@@ -1,0 +1,58 @@
+diff --git a/dlls/crypt32/cert.c b/dlls/crypt32/cert.c
+index 19a3e48..2a3db81 100644
+--- a/dlls/crypt32/cert.c
++++ b/dlls/crypt32/cert.c
+@@ -993,6 +993,20 @@ BOOL WINAPI CryptAcquireCertificatePrivateKey(PCCERT_CONTEXT pCert,
+     TRACE("(%p, %08lx, %p, %p, %p, %p)\n", pCert, dwFlags, pvReserved,
+      phCryptProv, pdwKeySpec, pfCallerFreeProv);
+ 
++    /* This implementation can only acquire legacy CAPI private keys.  Returning
++     * an HCRYPTPROV for an NCrypt-only request makes the caller interpret the
++     * CAPI handle as an NCRYPT_KEY_HANDLE. */
++    if (dwFlags & CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG)
++    {
++        *phCryptProv = 0;
++        if (pdwKeySpec)
++            *pdwKeySpec = 0;
++        if (pfCallerFreeProv)
++            *pfCallerFreeProv = FALSE;
++        SetLastError(NTE_BAD_KEYSET);
++        return FALSE;
++    }
++
+     if (dwFlags & CRYPT_ACQUIRE_USE_PROV_INFO_FLAG)
+     {
+         DWORD size = 0;
+diff --git a/dlls/crypt32/unixlib.c b/dlls/crypt32/unixlib.c
+index 8a3755f..1da86c6 100644
+--- a/dlls/crypt32/unixlib.c
++++ b/dlls/crypt32/unixlib.c
+@@ -450,6 +450,28 @@ static NTSTATUS open_cert_store( void *args )
+ 
+     pfx_data.data = params->pfx->pbData;
+     pfx_data.size = params->pfx->cbData;
++    /* Windows accepts a PFX buffer with trailing capacity.  GnuTLS expects the
++     * datum to end exactly at the outer DER object. */
++    if (pfx_data.size >= 2 && pfx_data.data[0] == 0x30)
++    {
++        unsigned int length_bytes = pfx_data.data[1] & 0x7f, content_size = 0, header_size, i;
++
++        if (!(pfx_data.data[1] & 0x80))
++        {
++            content_size = pfx_data.data[1];
++            header_size = 2;
++        }
++        else if (length_bytes && length_bytes <= sizeof(content_size) &&
++                 length_bytes <= pfx_data.size - 2)
++        {
++            header_size = 2 + length_bytes;
++            for (i = 0; i < length_bytes; ++i) content_size = (content_size << 8) | pfx_data.data[2 + i];
++        }
++        else header_size = 0;
++
++        if (header_size && content_size <= pfx_data.size - header_size)
++            pfx_data.size = header_size + content_size;
++    }
+     if ((ret = pgnutls_pkcs12_import( p12, &pfx_data, GNUTLS_X509_FMT_DER, 0 )) < 0) goto error;
+     if ((ret = pgnutls_pkcs12_verify_mac( p12, pwd ? pwd : "" )) < 0) goto error;
+ 

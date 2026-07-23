@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "model": "Rival 3 Wireless Gen 2",
+  "firmware": {
+    "architecture": "arm-thumb",
+    "mcu_image_start": "0x00019000",
+    "image_size": "0x00012000",
+    "crc32_residue": "0xFFFFFFFF",
+    "initial_sp": "0x20005FE0",
+    "versions": {
+      "1.4.0.0": {
+        "sha256": "71c7cfbb6a14696923c98a39f6e51f0f5b7c61855530b2bffe75430d039c8ba0"
+      },
+      "1.5.0.0": {
+        "sha256": "b2546a383d9f35516041b8844c3b04df0231db801fd4e7384bc39e601cb9ce38"
+      }
+    }
+  },
+  "memory": {
+    "flash": {
+      "mcu_000190c0": {
+        "space": "firmware",
+        "address": "0x000190C0",
+        "size": "0x140",
+        "empty": "00",
+        "locate": {
+          "search": {
+            "start": "0x00019080",
+            "end": "0x000192D4"
+          },
+          "anchor": {
+            "pattern": "10 B5 05 4C 23 78 33 B9 04 4B 13 B1 04 48 AF F3",
+            "offset": "-0x140"
+          }
+        }
+      },
+      "mcu_0002ab2c": {
+        "space": "firmware",
+        "address": "0x0002AB2C",
+        "size": "0x178",
+        "empty": "00",
+        "locate": {
+          "search": {
+            "start": "0x0002AB00",
+            "end": "0x0002AFFC"
+          },
+          "anchor": {
+            "pattern": "01 00 00 00 C0 39 00 20 01 00 20 00",
+            "offset": 12
+          }
+        }
+      },
+      "external_00040000": {
+        "space": "external",
+        "offset": "0x00040000",
+        "size": "0x1000"
+      },
+      "external_00041000": {
+        "space": "external",
+        "offset": "0x00041000",
+        "size": "0x1000"
+      }
+    },
+    "ram": {
+      "ram_20004360": {
+        "address": "0x20004360",
+        "size": "0x0800"
+      },
+      "ram_20004b60": {
+        "address": "0x20004B60",
+        "size": "0x0600"
+      }
+    }
+  }
+}

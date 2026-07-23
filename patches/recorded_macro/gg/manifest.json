@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "engine": "apps/engine/SteelSeriesEngine.exe",
+  "versions": {
+    "115.0.0": {
+      "sha256": "8157c457dcd456fc8d5578752e1cf8179951018963b7af6b0758bd280d593ea5"
+    }
+  },
+  "files": [
+    {
+      "path": "resources/app.asar",
+      "operation": {
+        "type": "asar",
+        "files": {
+          "render/*.js": {
+            "original_sha256": "140ab3f95238b13b9815fd09231555c2cec45cae2e0f45635f1cea28af8684db",
+            "patched_sha256": "51fea2e5d4300f6e50587edd679c6164ec578682367d9e6382cc632fd38ce442",
+            "bindings": {
+              "macro_module": {
+                "type": "webpack_module_id",
+                "anchor": "macro data limit reached, cannot create this macro"
+              }
+            },
+            "replacements": [
+              {
+                "find": "m=function(e,t,i,n,o){let r=JSON.parse(n.eventsString)",
+                "replace": "m=function(e,t,i,n,o,h){let r=JSON.parse(n.eventsString)"
+              },
+              {
+                "find": "Array.from([0,1,2,3,4,5,6,7,8]).includes(c.code)||![0,1].includes(c.extraData)",
+                "replace": "Array.from([0,1,2,3,4,5,6,7,8]).includes(c.code)||c.code>h||![0,1].includes(c.extraData)"
+              },
+              {
+                "find": "b=function(e,t,i,n){let o;",
+                "replace": "b=function(e,t,i,n,r){let o;"
+              },
+              {
+                "find": "null!=o?m(0,t,i,o,n):console.error",
+                "replace": "null!=o?m(0,t,i,o,n,r):console.error"
+              },
+              {
+                "find": "}(e),m(0,t,i,o,n);break;",
+                "replace": "}(e),m(0,t,i,o,n,r);break;"
+              },
+              {
+                "find": "applyBindingsToOnboard(e,t,i,n){let o,r,a,s;",
+                "replace": "applyBindingsToOnboard(e,t,i,n,h=8){let o,r,a,s;"
+              },
+              {
+                "find": "a=t[i],({playbackOptions:s}=r),b(o,a,s,l);",
+                "replace": "a=t[i],({playbackOptions:s}=r),b(o,a,s,l,h);"
+              },
+              {
+                "find": "a=i[n],({playbackOptions:s}=r),b(o,a,s,l);return n.event_data",
+                "replace": "a=i[n],({playbackOptions:s}=r),b(o,a,s,l,h);return n.event_data"
+              },
+              {
+                "find": "applyBindingsToOnboard(e,t,i,n,h=8){let o,r,a,s;u=0;let l=new Uint8ClampedArray(p);",
+                "replace": "applyBindingsToOnboard(e,t,i,n,h=8){let o,r,a,s;u=0,p=n.event_data().length;let l=new Uint8ClampedArray(p);"
+              },
+              {
+                "find": "applyOnboardToBindings(t,i,n,o,r,a){g=0;let s=e({});",
+                "replace": "applyOnboardToBindings(t,i,n,o,r,a){g=0,p=r.event_data().length;let s=e({});"
+              },
+              {
+                "find": "getLabelForBinding(e,a,s,l){var d,c;let u=a[l]",
+                "replace": "getLabelForBinding(e,a,s,l){var d,c;p=s.event_data.length;let u=a[l]"
+              },
+              {
+                "find": "if(113===u.function){var p=i.fromJS(s),f=4*(u.key_codes[2]|u.key_codes[3]<<8),v=y(p,f);",
+                "replace": "if(113===u.function){var w=i.fromJS(s),f=4*(u.key_codes[2]|u.key_codes[3]<<8),v=y(w,f);"
+              },
+              {
+                "find": "let[,e]=Array.from(C(p,f+8,v.length));",
+                "replace": "let[,e]=Array.from(C(w,f+8,v.length));"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "database": {
+    "path": "apps/engine/db/database.db"
+  },
+  "devices": [
+    {
+      "product_id": 272111730,
+      "macro_size": 1280,
+      "has_onboard_macros": false,
+      "files": [
+        {
+          "path": "apps/engine/deviceSpecifications/rival-3-wireless-v2.edevice",
+          "operation": {
+            "type": "descriptor_patch",
+            "source": "rival-3-wireless-v2.scm.patch",
+            "original_scm_sha256": "411d72fde490797700bcb4d905f6bd906bff9fcd80ce36a5f18dd5eb39093547",
+            "patched_scm_sha256": "f3a8864308ef2adfa470c03f487ac5adae1ca6eb4e4244226a66c06cdc713aa8"
+          }
+        }
+      ],
+      "asar_replacements": {
+        "resources/app.asar": {
+          "render/*.js": [
+            {
+              "find": "p=i(30652),f=i.n(p),v=i(73180);const m=",
+              "replace": "p=i(30652),f=i.n(p),v=i(73180),x=i({{macro_module}});const m="
+            },
+            {
+              "find": "t.button_mappings,t.wheel_mappings,t.batch_xy_resolution,i.low_power_gaming_mode",
+              "replace": "t.button_mappings,t.wheel_mappings,t.macros,t.batch_xy_resolution,i.low_power_gaming_mode"
+            },
+            {
+              "find": "e.bluetoothConnected=o().pureComputed((()=>5==e.rfStatus.value()));let n=function(){if(document.hasFocus()&&e.selected())return e.rfStatus.update()};",
+              "replace": "e.bluetoothConnected=o().pureComputed((()=>5==e.rfStatus.value()));e.recordedMacroFirmware=o().observable(!1),e.recordedMacroProbeState=0,e.recordedMacroProbeGeneration=0,e.recordedMacroProbeTimer=null,e.recordedMacroPendingSave=null,e.finishRecordedMacroProbe=function(t,i){if(t!==e.recordedMacroProbeGeneration)return;clearTimeout(e.recordedMacroProbeTimer),e.recordedMacroProbeTimer=null,e.recordedMacroFirmware(i),e.recordedMacroProbeState=2;const n=e.recordedMacroPendingSave;e.recordedMacroPendingSave=null,null!=n&&n()},e.updateRecordedMacroFirmware=function(){if(0!==e.recordedMacroProbeState)return;const t=e.recordedMacroProbeGeneration;e.recordedMacroProbeState=1,clearTimeout(e.recordedMacroProbeTimer),e.recordedMacroProbeTimer=setTimeout((()=>e.finishRecordedMacroProbe(t,!1)),2e3),(0,v.executeDeviceCommand)({type:\"read\",id:e.deviceId,command:{steelpatch_header:{}},cb:i=>{const n=(0,v.commandDataFromResponse)({response:i,key:\"steelpatch_header\"});e.finishRecordedMacroProbe(t,1347236690===(null==n?void 0:n.magic)&&65608===(null==n?void 0:n.abi))}})},e.syncRecordedMacroBindings=function(){const i=g().buttonTriggers(),n=[...t.button_mappings.buttons(),...t.wheel_mappings.wheels()],o=255;for(const r of e.bindingsModel.bindings()){const a=i.findIndex((t=>t.customActionTrigger.hidCode===r.trigger.hidCode&&t.customActionTrigger.type===r.trigger.type&&(t.customActionTrigger.page===r.trigger.page||o===r.trigger.page)));a>=0&&a<n.length&&(r.trigger.page=e.recordedMacroFirmware()&&null!=r.macroId&&113===n[a].function()?o:i[a].customActionTrigger.page)}},e.recordedMacroRfStatusSubscription=e.rfStatus.value.subscribe((t=>{e.recordedMacroProbeGeneration++,clearTimeout(e.recordedMacroProbeTimer),e.recordedMacroProbeTimer=null,e.recordedMacroFirmware(!1),e.recordedMacroProbeState=0,null!=t&&e.updateRecordedMacroFirmware()}));let n=function(){if(document.hasFocus()&&e.selected())return e.rfStatus.update()};"
+            },
+            {
+              "find": "n.push(f().createBinding(i[7],r[1],t,l.default.newerFourByteSelector,null,null,null,u)),n},e.loadBindings();let p=e.save;",
+              "replace": "n.push(f().createBinding(i[7],r[1],t,l.default.newerFourByteSelector,null,null,null,u)),n},e.syncRecordedMacroBindings(),e.loadBindings();let p=e.save;"
+            },
+            {
+              "find": "let p=e.save;e.save=function(i){var n;c().validateMouseBindingsAndSave(",
+              "replace": "let p=e.save;e.save=function(i){const n=()=>{var n;e.recordedMacroFirmware()&&x.applyBindingsToOnboard(e.bindings(),t.button_mappings.buttons(),t.wheel_mappings.wheels(),t.macros,t.button_mappings.buttons().length),e.syncRecordedMacroBindings(),c().validateMouseBindingsAndSave("
+            },
+            {
+              "find": "independent_xy_enabled:!0}))},e.actionsModel=",
+              "replace": "independent_xy_enabled:!0}))};return 0===e.recordedMacroProbeState&&e.updateRecordedMacroFirmware(),1===e.recordedMacroProbeState?(e.recordedMacroPendingSave=n,void 0):n()},e.actionsModel="
+            },
+            {
+              "find": "e.disposeCallback=function(){e.actionsModel.dispose(),e.subscriptions=[],clearInterval(e.rfStatusInterval),e.rfStatusInterval=null}",
+              "replace": "e.disposeCallback=function(){e.actionsModel.dispose(),e.subscriptions=[],clearInterval(e.rfStatusInterval),clearTimeout(e.recordedMacroProbeTimer),e.recordedMacroRfStatusSubscription.dispose(),e.recordedMacroProbeGeneration++,e.recordedMacroPendingSave=null,e.rfStatusInterval=null,e.recordedMacroProbeTimer=null}"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

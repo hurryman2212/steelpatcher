@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "architecture": "arm-thumb",
+  "artifacts": {
+    "extension": {
+      "link": "runtime",
+      "packaging": "crc32-residue",
+      "required_symbol": "PatchMacroTriggerPress",
+      "word_checks": {
+        "0x00": { "value": "0x504D3352" },
+        "0x04": { "value": "0x00010048" },
+        "0x08": { "definition": "PATCH_CODE_ADDRESS" },
+        "0x0C": { "definition": "PATCH_LOAD_SIZE" },
+        "0x10": { "definition": "PATCH_MACRO_RAW_OFFSET" },
+        "0x14": { "definition": "PATCH_MACRO_DATA_SIZE" },
+        "0x18": { "definition": "PATCH_MACRO_SECTOR_SIZE" },
+        "0x1C": { "definition": "PATCH_STATE_ADDRESS" },
+        "0x20": { "definition": "PATCH_STATE_LIMIT" },
+        "0x24": { "definition": "PATCH_CODE_RAW_OFFSET" },
+        "0x28": { "definition": "PATCH_CODE_SECTOR_SIZE" },
+        "0x2C": { "symbol": "PatchMacroTriggerPress", "thumb": true },
+        "0x30": { "symbol": "PatchMacroTriggerRelease", "thumb": true },
+        "0x34": { "symbol": "PatchMacroTick", "thumb": true },
+        "0x38": { "symbol": "PatchFlashEraseHandler", "thumb": true },
+        "0x3C": { "symbol": "PatchFlashPushHandler", "thumb": true },
+        "0x40": { "symbol": "PatchFlashPullHandler", "thumb": true },
+        "0x44": { "value": "0xFFFFFFFF" }
+      }
+    },
+    "loader": {
+      "link": "storage",
+      "packaging": "raw",
+      "required_symbol": "PatchMappingPressTrampoline"
+    },
+    "fallback": {
+      "link": "storage",
+      "packaging": "raw",
+      "required_symbol": "FallbackFlashHandler"
+    }
+  },
+  "bindings": {
+    "object_read": {
+      "placeholder": "0x00021E05",
+      "targets": {
+        "extension": 2,
+        "loader": 1,
+        "fallback": 1
+      }
+    },
+    "object_write": {
+      "placeholder": "0x00021E41",
+      "targets": {
+        "extension": 1,
+        "fallback": 1
+      }
+    },
+    "object_erase": {
+      "placeholder": "0x00021E7D",
+      "targets": {
+        "extension": 1,
+        "fallback": 1
+      }
+    },
+    "raw_sector_erase": {
+      "placeholder": "0x0001C2A5",
+      "targets": {
+        "extension": 1,
+        "fallback": 1
+      }
+    },
+    "crc32": {
+      "placeholder": "0x0001C04B",
+      "targets": {
+        "loader": 1
+      }
+    },
+    "fallback_handler": {
+      "placeholder": "0x0002AB2D",
+      "targets": {
+        "loader": 1
+      }
+    },
+    "mapping_press_next": {
+      "placeholder": "0x00020C15",
+      "targets": {
+        "loader": 1
+      }
+    },
+    "mapping_release_next": {
+      "placeholder": "0x00020C7D",
+      "targets": {
+        "loader": 1
+      }
+    },
+    "tick_next": {
+      "placeholder": "0x0001EDAD",
+      "targets": {
+        "loader": 1
+      }
+    }
+  }
+}
